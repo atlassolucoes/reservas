@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gerenciamento de Reservas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+        }
+
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-section {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #999;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .filter-group {
+            margin-bottom: 16px;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .checkbox-item input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: #667eea;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn-filter {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-apply {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-apply:hover {
+            background: #5568d3;
+        }
+
+        .btn-reset {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-reset:hover {
+            background: #e0e0e0;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            overflow-y: auto;
+            background: #f8f9fa;
+        }
+
+        .header {
+            background: white;
+            padding: 24px;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 16px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .header-top-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .updated-at {
+            font-size: 11px;
+            color: #999;
+            white-space: nowrap;
+        }
+
+        .btn-refresh {
+            padding: 8px 14px;
+            font-size: 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .btn-refresh:hover {
+            border-color: #667eea;
+        }
+
+        .search-box {
+            width: 300px;
+            padding: 10px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .kpi-card.success {
+            border-left-color: #28a745;
+        }
+
+        .kpi-card.warning {
+            border-left-color: #ffc107;
+        }
+
+        .kpi-card.info {
+            border-left-color: #17a2b8;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .kpi-meta {
+            font-size: 12px;
+            color: #999;
+            margin-top: 8px;
+        }
+
+        /* CONTENT SECTIONS */
+        .content-section {
+            padding: 24px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .chart-container {
+            position: relative;
+            flex: 1;
+            min-height: 300px;
+        }
+
+        /* CALENDAR */
+        .calendar-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+
+        .month-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .month-nav button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .month-nav button:hover {
+            background: #5568d3;
+        }
+
+        .month-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .day-header {
+            text-align: center;
+            font-weight: 600;
+            color: #667eea;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: white;
+        }
+
+        .day:hover {
+            background: #f0f0f0;
+        }
+
+        .day-empty {
+            background: #fafafa;
+            cursor: default;
+            border-color: transparent;
+        }
+
+        .day-num {
+            font-weight: 700;
+            color: #333;
+            font-size: 12px;
+        }
+
+        .day-reserved {
+            background: #d4edda;
+            border-color: #28a745;
+            font-weight: bold;
+        }
+
+        .day-reserved::after {
+            content: "✓";
+            position: absolute;
+            top: 1px;
+            right: 2px;
+            color: #28a745;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .day-pending {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .day-pending::after {
+            content: "⏳";
+            position: absolute;
+            top: 1px;
+            right: 2px;
+            font-size: 10px;
+        }
+
+        /* TABLE */
+        .table-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-info {
+            font-size: 13px;
+            color: #999;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            padding: 12px 20px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .guest-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .platform-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .platform-airbnb {
+            background: #ffe4e4;
+            color: #d63031;
+        }
+
+        .platform-booking {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .platform-outro {
+            background: #ede7f6;
+            color: #5e35b1;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-confirmada {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-pendente {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-outro {
+            background: #eee;
+            color: #555;
+        }
+
+        .amount {
+            font-weight: 600;
+            color: #28a745;
+        }
+
+        .pagination {
+            padding: 16px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .pagination button {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .pagination button:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .pagination button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            border-top: 3px solid #667eea;
+            margin-bottom: 12px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR COM FILTROS -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🏠 ReservasPRO</div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Busca Rápida</div>
+                <div class="filter-group">
+                    <input type="text" id="searchInput" class="filter-input" placeholder="Buscar hóspede...">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Data de Reserva</div>
+                <div class="filter-group">
+                    <label class="filter-label">De:</label>
+                    <input type="date" id="filterDataReservaFrom" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Até:</label>
+                    <input type="date" id="filterDataReservaTo" class="filter-input">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Data de Check-in</div>
+                <div class="filter-group">
+                    <label class="filter-label">De:</label>
+                    <input type="date" id="filterCheckInFrom" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Até:</label>
+                    <input type="date" id="filterCheckInTo" class="filter-input">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Data de Recebimento</div>
+                <div class="filter-group">
+                    <label class="filter-label">De:</label>
+                    <input type="date" id="filterRecebimentoFrom" class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Até:</label>
+                    <input type="date" id="filterRecebimentoTo" class="filter-input">
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Plataforma</div>
+                <div class="checkbox-group" id="platformCheckboxes"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Status</div>
+                <div class="checkbox-group" id="statusCheckboxes"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Tipo de Quarto</div>
+                <div class="checkbox-group" id="roomCheckboxes"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="filter-buttons">
+                    <button class="btn-filter btn-apply" onclick="applyFilters()">Filtrar</button>
+                    <button class="btn-filter btn-reset" onclick="resetFilters()">Limpar</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+            <!-- HEADER -->
+            <div class="header">
+                <div class="header-top">
+                    <h1 class="header-title">Gerenciamento de Reservas</h1>
+                    <div class="header-top-right">
+                        <span class="updated-at" id="updatedAt"></span>
+                        <button class="btn-refresh" onclick="triggerUpdate()">↻ Atualizar</button>
+                    </div>
+                </div>
+                <input type="text" id="globalSearch" class="search-box" placeholder="🔍 Pesquisar...">
+
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Total de Reservas</div>
+                        <div class="kpi-value" id="kpiTotal">0</div>
+                        <div class="kpi-meta" id="kpiTotalMeta">-</div>
+                    </div>
+                    <div class="kpi-card success">
+                        <div class="kpi-label">Receita Total</div>
+                        <div class="kpi-value" id="kpiReceita">R$ 0,00</div>
+                        <div class="kpi-meta">Confirmadas</div>
+                    </div>
+                    <div class="kpi-card info">
+                        <div class="kpi-label">Comissões</div>
+                        <div class="kpi-value" id="kpiComissao">R$ 0,00</div>
+                        <div class="kpi-meta">Plataformas</div>
+                    </div>
+                    <div class="kpi-card warning">
+                        <div class="kpi-label">Valor Líquido</div>
+                        <div class="kpi-value" id="kpiLiquido">R$ 0,00</div>
+                        <div class="kpi-meta">A receber</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CALENDÁRIO -->
+            <div class="content-section">
+                <div class="section-title">📅 Calendário de Ocupação</div>
+                <div class="calendar-card">
+                    <div class="month-nav">
+                        <button onclick="prevMonth()">← Anterior</button>
+                        <div class="month-title" id="monthTitle">—</div>
+                        <button onclick="nextMonth()">Próximo →</button>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+            </div>
+
+            <!-- GRÁFICOS -->
+            <div class="content-section">
+                <div class="section-title">📊 Análise Financeira & Ocupação</div>
+                <div class="cards-grid">
+                    <div class="chart-card">
+                        <div class="chart-title">💰 Receita por Plataforma</div>
+                        <div class="chart-container">
+                            <canvas id="chartPlatform"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">✅ Status das Reservas</div>
+                        <div class="chart-container">
+                            <canvas id="chartStatus"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <div class="chart-title">🛏️ Ocupação por Quarto</div>
+                        <div class="chart-container">
+                            <canvas id="chartRoom"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABELA DE RESERVAS -->
+            <div class="content-section">
+                <div class="section-title">📋 Listagem de Reservas</div>
+                <div class="table-card">
+                    <div class="table-header">
+                        <div class="table-controls">
+                            <div class="table-info">Mostrando <span id="tableCount">0</span> reserva(s)</div>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table id="reservasTable">
+                            <thead>
+                                <tr>
+                                    <th>Hóspede</th>
+                                    <th>Plataforma</th>
+                                    <th>Data Reserva</th>
+                                    <th>Check-in</th>
+                                    <th>Check-out</th>
+                                    <th>Quarto</th>
+                                    <th>Status</th>
+                                    <th>Valor</th>
+                                    <th>Comissão</th>
+                                    <th>Líquido</th>
+                                    <th>Recebimento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="noDataDiv" class="no-data">
+                        <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                        <div>Nenhuma reserva encontrada</div>
+                    </div>
+                    <div class="pagination" id="paginationDiv" style="display: none;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        /* ── DATA — replaced by fetch_data.py ── */
+        const DATA = {"updated_at":null,"reservas":[]};
+        const reservas = DATA.reservas;
+
+        let filteredReservas = [...reservas];
+        let currentPage = 1;
+        let currentMonth = new Date().getMonth() + 1;
+        let currentYear = new Date().getFullYear();
+        const itemsPerPage = 10;
+        let chartPlatformInstance = null;
+        let chartStatusInstance = null;
+        let chartRoomInstance = null;
+
+        /* ── init ── */
+        document.addEventListener('DOMContentLoaded', () => {
+            if (DATA.updated_at) {
+                const d = new Date(DATA.updated_at);
+                document.getElementById('updatedAt').textContent = 'Atualizado em ' + d.toLocaleString('pt-BR');
+            }
+            if (reservas.length) {
+                const firstCheckin = reservas.map(r => r.checkin).filter(Boolean).sort()[0];
+                if (firstCheckin) {
+                    const d = new Date(firstCheckin);
+                    currentMonth = d.getMonth() + 1;
+                    currentYear = d.getFullYear();
+                }
+            }
+            buildFilterCheckboxes();
+        });
+
+        function triggerUpdate() {
+            window.open('https://github.com/atlassolucoes/reservas/actions/workflows/update-dashboard.yml', '_blank');
+        }
+
+        /* ── date helpers ── */
+        // Aceita tanto "YYYY-MM-DD[THH:MM:SS]" (vindo da planilha) quanto "DD/MM/YYYY" (fallback)
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            if (dateStr.includes('-')) return new Date(dateStr);
+            const [day, month, year] = dateStr.split('/');
+            return new Date(year, month - 1, day);
+        }
+        function fmtDateBR(dateStr) {
+            if (!dateStr) return '-';
+            const d = parseDate(dateStr);
+            if (!d || isNaN(d)) return '-';
+            return d.toLocaleDateString('pt-BR');
+        }
+        function toDateInputValue(dateStr) {
+            // extrai só a parte YYYY-MM-DD pra comparar com <input type="date">
+            if (!dateStr) return null;
+            return dateStr.substring(0, 10);
+        }
+
+        /* ── filtros dinâmicos (plataforma/status/quarto vêm dos dados reais) ── */
+        function buildFilterCheckboxes() {
+            const platforms = [...new Set(reservas.map(r => r.platform).filter(Boolean))].sort();
+            const statuses  = [...new Set(reservas.map(r => r.status).filter(Boolean))].sort();
+            const rooms     = [...new Set(reservas.map(r => r.room).filter(Boolean))].sort();
+
+            renderCheckboxGroup('platformCheckboxes', 'platform', platforms);
+            renderCheckboxGroup('statusCheckboxes', 'status', statuses);
+            renderCheckboxGroup('roomCheckboxes', 'room', rooms.map(r => ({value: r, label: r.replace('QUARTO ', '')})));
+
+            applyFilters();
+        }
+        function renderCheckboxGroup(containerId, name, values) {
+            const el = document.getElementById(containerId);
+            el.innerHTML = values.map((v, i) => {
+                const value = typeof v === 'string' ? v : v.value;
+                const label = typeof v === 'string' ? v : v.label;
+                const id = `filter-${name}-${i}`;
+                return `<div class="checkbox-item">
+                    <input type="checkbox" id="${id}" name="${name}" value="${value}" checked>
+                    <label for="${id}">${label}</label>
+                </div>`;
+            }).join('');
+        }
+
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const selectedPlatforms = Array.from(document.querySelectorAll('input[name="platform"]:checked')).map(e => e.value);
+            const selectedStatus = Array.from(document.querySelectorAll('input[name="status"]:checked')).map(e => e.value);
+            const selectedRooms = Array.from(document.querySelectorAll('input[name="room"]:checked')).map(e => e.value);
+
+            const dataReservaFrom = document.getElementById('filterDataReservaFrom').value || null;
+            const dataReservaTo   = document.getElementById('filterDataReservaTo').value || null;
+            const checkinFrom     = document.getElementById('filterCheckInFrom').value || null;
+            const checkinTo       = document.getElementById('filterCheckInTo').value || null;
+            const recebimentoFrom = document.getElementById('filterRecebimentoFrom').value || null;
+            const recebimentoTo   = document.getElementById('filterRecebimentoTo').value || null;
+
+            filteredReservas = reservas.filter(r => {
+                if (search && !r.guest.toLowerCase().includes(search) && !r.platform.toLowerCase().includes(search)) return false;
+                if (selectedPlatforms.length > 0 && !selectedPlatforms.includes(r.platform)) return false;
+                if (selectedStatus.length > 0 && !selectedStatus.includes(r.status)) return false;
+                if (selectedRooms.length > 0 && !selectedRooms.includes(r.room)) return false;
+
+                const dReserva = toDateInputValue(r.dataReserva);
+                if (dataReservaFrom && (!dReserva || dReserva < dataReservaFrom)) return false;
+                if (dataReservaTo   && (!dReserva || dReserva > dataReservaTo)) return false;
+
+                const dCheckin = toDateInputValue(r.checkin);
+                if (checkinFrom && (!dCheckin || dCheckin < checkinFrom)) return false;
+                if (checkinTo   && (!dCheckin || dCheckin > checkinTo)) return false;
+
+                const dReceb = toDateInputValue(r.received);
+                if (recebimentoFrom && (!dReceb || dReceb < recebimentoFrom)) return false;
+                if (recebimentoTo   && (!dReceb || dReceb > recebimentoTo)) return false;
+
+                return true;
+            });
+
+            currentPage = 1;
+            updateKPIs();
+            renderTable();
+            updateCharts();
+        }
+
+        document.getElementById('globalSearch').addEventListener('input', (e) => {
+            document.getElementById('searchInput').value = e.target.value;
+            applyFilters();
+        });
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('globalSearch').value = '';
+            ['filterDataReservaFrom','filterDataReservaTo','filterCheckInFrom','filterCheckInTo','filterRecebimentoFrom','filterRecebimentoTo'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+            filteredReservas = [...reservas];
+            currentPage = 1;
+            updateKPIs();
+            renderTable();
+            updateCharts();
+        }
+
+        function updateKPIs() {
+            const total = filteredReservas.length;
+            const confirmadas = filteredReservas.filter(r => r.status === 'Confirmada').length;
+            const pendentes = filteredReservas.filter(r => r.status === 'Pendente').length;
+            const totalReceita = filteredReservas.filter(r => r.status === 'Confirmada').reduce((sum, r) => sum + (r.value || 0), 0);
+            const totalComissao = filteredReservas.filter(r => r.status === 'Confirmada').reduce((sum, r) => sum + (r.commission || 0), 0);
+            const totalLiquido = filteredReservas.filter(r => r.status === 'Confirmada').reduce((sum, r) => sum + (r.netValue || 0), 0);
+
+            document.getElementById('kpiTotal').textContent = total;
+            document.getElementById('kpiTotalMeta').textContent = `${confirmadas} confirmada${confirmadas !== 1 ? 's' : ''}, ${pendentes} pendente${pendentes !== 1 ? 's' : ''}`;
+            document.getElementById('kpiReceita').textContent = `R$ ${totalReceita.toFixed(2).replace('.', ',')}`;
+            document.getElementById('kpiComissao').textContent = `R$ ${totalComissao.toFixed(2).replace('.', ',')}`;
+            document.getElementById('kpiLiquido').textContent = `R$ ${totalLiquido.toFixed(2).replace('.', ',')}`;
+        }
+
+        function platformBadgeClass(p) {
+            if (p === 'AIRBNB') return 'platform-airbnb';
+            if (p === 'BOOKING') return 'platform-booking';
+            return 'platform-outro';
+        }
+        function statusBadgeClass(s) {
+            if (s === 'Confirmada') return 'status-confirmada';
+            if (s === 'Pendente') return 'status-pendente';
+            return 'status-outro';
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const noDataDiv = document.getElementById('noDataDiv');
+            const paginationDiv = document.getElementById('paginationDiv');
+            tbody.innerHTML = '';
+
+            if (filteredReservas.length === 0) {
+                tbody.style.display = 'none';
+                noDataDiv.style.display = 'block';
+                paginationDiv.style.display = 'none';
+                document.getElementById('tableCount').textContent = '0';
+                return;
+            }
+
+            tbody.style.display = 'table-row-group';
+            noDataDiv.style.display = 'none';
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageItems = filteredReservas.slice(start, end);
+
+            pageItems.forEach(r => {
+                const tr = document.createElement('tr');
+                const platformClass = platformBadgeClass(r.platform);
+                const statusClass = statusBadgeClass(r.status);
+
+                tr.innerHTML = `
+                    <td><span class="guest-name">${r.guest}</span></td>
+                    <td><span class="platform-badge ${platformClass}">${r.platform}</span></td>
+                    <td>${fmtDateBR(r.dataReserva)}</td>
+                    <td>${fmtDateBR(r.checkin)}</td>
+                    <td>${fmtDateBR(r.checkout)}</td>
+                    <td>${(r.room || '').replace('QUARTO ', '')}</td>
+                    <td><span class="status-badge ${statusClass}">${r.status}</span></td>
+                    <td><span class="amount">${r.value != null ? `R$ ${r.value.toFixed(2).replace('.', ',')}` : '-'}</span></td>
+                    <td>${r.commission != null ? `R$ ${r.commission.toFixed(2).replace('.', ',')}` : '-'}</td>
+                    <td><span class="amount">${r.netValue != null ? `R$ ${r.netValue.toFixed(2).replace('.', ',')}` : '-'}</span></td>
+                    <td>${fmtDateBR(r.received)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('tableCount').textContent = filteredReservas.length;
+
+            const totalPages = Math.ceil(filteredReservas.length / itemsPerPage);
+            if (totalPages > 1) {
+                paginationDiv.style.display = 'flex';
+                paginationDiv.innerHTML = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement('button');
+                    btn.textContent = i;
+                    btn.className = currentPage === i ? 'active' : '';
+                    btn.onclick = () => { currentPage = i; renderTable(); };
+                    paginationDiv.appendChild(btn);
+                }
+            } else {
+                paginationDiv.style.display = 'none';
+            }
+        }
+
+        function updateCharts() {
+            const platformTotals = {};
+            filteredReservas.forEach(r => { platformTotals[r.platform] = (platformTotals[r.platform] || 0) + (r.value || 0); });
+            const platformLabels = Object.keys(platformTotals);
+            const platformColors = { AIRBNB: '#d63031', BOOKING: '#1976d2' };
+
+            const statusTotals = {};
+            filteredReservas.forEach(r => { statusTotals[r.status] = (statusTotals[r.status] || 0) + 1; });
+            const statusLabels = Object.keys(statusTotals);
+            const statusColors = { Confirmada: '#28a745', Pendente: '#ffc107' };
+
+            const roomTotals = {};
+            filteredReservas.forEach(r => { const label = (r.room || 'Outro').replace('QUARTO ', ''); roomTotals[label] = (roomTotals[label] || 0) + 1; });
+            const roomLabels = Object.keys(roomTotals);
+
+            if (chartPlatformInstance) chartPlatformInstance.destroy();
+            if (chartStatusInstance) chartStatusInstance.destroy();
+            if (chartRoomInstance) chartRoomInstance.destroy();
+
+            const ctx1 = document.getElementById('chartPlatform').getContext('2d');
+            chartPlatformInstance = new Chart(ctx1, {
+                type: 'doughnut',
+                data: {
+                    labels: platformLabels,
+                    datasets: [{ data: platformLabels.map(l => platformTotals[l]), backgroundColor: platformLabels.map(l => platformColors[l] || '#764ba2'), borderColor: '#fff', borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 15, font: { size: 12 } } } } }
+            });
+
+            const ctx2 = document.getElementById('chartStatus').getContext('2d');
+            chartStatusInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{ data: statusLabels.map(l => statusTotals[l]), backgroundColor: statusLabels.map(l => statusColors[l] || '#999'), borderColor: '#fff', borderWidth: 2 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 15, font: { size: 12 } } } } }
+            });
+
+            const ctx3 = document.getElementById('chartRoom').getContext('2d');
+            chartRoomInstance = new Chart(ctx3, {
+                type: 'bar',
+                data: {
+                    labels: roomLabels,
+                    datasets: [{ label: 'Quantidade', data: roomLabels.map(l => roomTotals[l]), backgroundColor: ['#667eea', '#764ba2', '#17a2b8', '#ffc107'], borderRadius: 6 }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+
+            document.getElementById('monthTitle').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
+
+            dayNames.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+
+            for (let i = 0; i < firstDay; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'day day-empty';
+                grid.appendChild(empty);
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayEl = document.createElement('div');
+                dayEl.className = 'day';
+
+                const hasReserva = reservas.some(r => {
+                    if (!r.checkin || !r.checkout) return false;
+                    const checkin = parseDate(r.checkin);
+                    const checkout = parseDate(r.checkout);
+                    const current = new Date(currentYear, currentMonth - 1, day);
+                    return current >= checkin && current < checkout && r.status === 'Confirmada';
+                });
+
+                const hasPending = reservas.some(r => {
+                    if (!r.checkin || !r.checkout) return false;
+                    const checkin = parseDate(r.checkin);
+                    const checkout = parseDate(r.checkout);
+                    const current = new Date(currentYear, currentMonth - 1, day);
+                    return current >= checkin && current < checkout && r.status === 'Pendente';
+                });
+
+                if (hasPending) dayEl.classList.add('day-pending');
+                else if (hasReserva) dayEl.classList.add('day-reserved');
+
+                dayEl.innerHTML = `<div class="day-num">${day}</div>`;
+                grid.appendChild(dayEl);
+            }
+        }
+
+        function prevMonth() {
+            currentMonth--;
+            if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+            renderCalendar();
+        }
+
+        window.addEventListener('load', () => {
+            renderCalendar();
+        });
+    </script>
+</body>
+</html>
