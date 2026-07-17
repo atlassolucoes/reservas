@@ -368,23 +368,24 @@
         }
 
         .day {
-            aspect-ratio: 1;
+            min-height: 96px;
             border: 1px solid #eee;
             border-radius: 5px;
             padding: 5px;
             font-size: 10px;
-            cursor: pointer;
+            cursor: default;
             transition: all 0.3s;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            align-items: stretch;
+            justify-content: flex-start;
             position: relative;
             background: white;
+            overflow: hidden;
         }
 
         .day:hover {
-            background: #f0f0f0;
+            background: #f8f9fb;
         }
 
         .day-empty {
@@ -397,35 +398,45 @@
             font-weight: 700;
             color: #333;
             font-size: 12px;
+            margin-bottom: 4px;
         }
 
-        .day-reserved {
-            background: #d4edda;
-            border-color: #28a745;
-            font-weight: bold;
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            overflow: hidden;
         }
 
-        .day-reserved::after {
-            content: "✓";
-            position: absolute;
-            top: 1px;
-            right: 2px;
-            color: #28a745;
-            font-size: 10px;
-            font-weight: bold;
+        .day-event {
+            font-size: 9.5px;
+            line-height: 1.3;
+            padding: 2px 5px;
+            border-radius: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #fff;
+            font-weight: 500;
         }
 
-        .day-pending {
-            background: #fff3cd;
-            border-color: #ffc107;
+        .day-event.event-confirmada {
+            background: #28a745;
         }
 
-        .day-pending::after {
-            content: "⏳";
-            position: absolute;
-            top: 1px;
-            right: 2px;
-            font-size: 10px;
+        .day-event.event-pendente {
+            background: #ffc107;
+            color: #5c4600;
+        }
+
+        .day-event.event-outro {
+            background: #999;
+        }
+
+        .day-event-more {
+            font-size: 9px;
+            color: #999;
+            padding: 1px 5px;
         }
 
         /* TABLE */
@@ -1102,30 +1113,35 @@
                 grid.appendChild(empty);
             }
 
+            const MAX_EVENTS_SHOWN = 3;
+
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
                 dayEl.className = 'day';
 
-                const hasReserva = reservas.some(r => {
+                const current = new Date(currentYear, currentMonth - 1, day);
+                const dayEvents = reservas.filter(r => {
                     if (!r.checkin || !r.checkout) return false;
                     const checkin = parseDate(r.checkin);
                     const checkout = parseDate(r.checkout);
-                    const current = new Date(currentYear, currentMonth - 1, day);
-                    return current >= checkin && current < checkout && r.status === 'Confirmada';
+                    return current >= checkin && current < checkout;
                 });
 
-                const hasPending = reservas.some(r => {
-                    if (!r.checkin || !r.checkout) return false;
-                    const checkin = parseDate(r.checkin);
-                    const checkout = parseDate(r.checkout);
-                    const current = new Date(currentYear, currentMonth - 1, day);
-                    return current >= checkin && current < checkout && r.status === 'Pendente';
-                });
+                const shown = dayEvents.slice(0, MAX_EVENTS_SHOWN);
+                const extra = dayEvents.length - shown.length;
 
-                if (hasPending) dayEl.classList.add('day-pending');
-                else if (hasReserva) dayEl.classList.add('day-reserved');
+                const eventsHtml = shown.map(r => {
+                    const statusClass = r.status === 'Confirmada' ? 'event-confirmada'
+                                       : r.status === 'Pendente'   ? 'event-pendente'
+                                       : 'event-outro';
+                    const room = (r.room || '').replace('QUARTO ', '');
+                    const label = room ? `${r.guest} · ${room}` : r.guest;
+                    const title = `${r.guest} — ${room || 'Quarto não informado'} (${r.status})`;
+                    return `<div class="day-event ${statusClass}" title="${title}">${label}</div>`;
+                }).join('');
+                const moreHtml = extra > 0 ? `<div class="day-event-more">+${extra} mais</div>` : '';
 
-                dayEl.innerHTML = `<div class="day-num">${day}</div>`;
+                dayEl.innerHTML = `<div class="day-num">${day}</div><div class="day-events">${eventsHtml}${moreHtml}</div>`;
                 grid.appendChild(dayEl);
             }
         }
