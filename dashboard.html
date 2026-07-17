@@ -420,17 +420,35 @@
             font-weight: 500;
         }
 
-        .day-event.event-confirmada {
-            background: #28a745;
+        /* Booking = azul, Airbnb = lilás. Confirmada = tom cheio, outros status = tom claro. */
+        .day-event.event-booking-confirmada {
+            background: #1976d2;
+            color: #fff;
         }
 
-        .day-event.event-pendente {
-            background: #ffc107;
-            color: #5c4600;
+        .day-event.event-booking-outro {
+            background: #bbdefb;
+            color: #0d47a1;
         }
 
-        .day-event.event-outro {
-            background: #999;
+        .day-event.event-airbnb-confirmada {
+            background: #8b5cf6;
+            color: #fff;
+        }
+
+        .day-event.event-airbnb-outro {
+            background: #ede7f6;
+            color: #5e35b1;
+        }
+
+        .day-event.event-plataforma-confirmada {
+            background: #555;
+            color: #fff;
+        }
+
+        .day-event.event-plataforma-outro {
+            background: #e0e0e0;
+            color: #555;
         }
 
         .day-event-more {
@@ -863,6 +881,16 @@
             if (!d || isNaN(d)) return '-';
             return d.toLocaleDateString('pt-BR');
         }
+        function dateOnly(d) {
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+        // Booking = azul, Airbnb = lilás. Confirmada = tom cheio; qualquer outro status = tom claro.
+        function eventColorClass(platform, status) {
+            const confirmed = status === 'Confirmada';
+            if (platform === 'BOOKING') return confirmed ? 'event-booking-confirmada' : 'event-booking-outro';
+            if (platform === 'AIRBNB')  return confirmed ? 'event-airbnb-confirmada'  : 'event-airbnb-outro';
+            return confirmed ? 'event-plataforma-confirmada' : 'event-plataforma-outro';
+        }
         function toDateInputValue(dateStr) {
             // extrai só a parte YYYY-MM-DD pra comparar com <input type="date">
             if (!dateStr) return null;
@@ -1122,21 +1150,20 @@
                 const current = new Date(currentYear, currentMonth - 1, day);
                 const dayEvents = reservas.filter(r => {
                     if (!r.checkin || !r.checkout) return false;
-                    const checkin = parseDate(r.checkin);
-                    const checkout = parseDate(r.checkout);
-                    return current >= checkin && current < checkout;
+                    // compara só a data (ignora hora) e inclui tanto o dia de check-in quanto o de check-out
+                    const checkin = dateOnly(parseDate(r.checkin));
+                    const checkout = dateOnly(parseDate(r.checkout));
+                    return current >= checkin && current <= checkout;
                 });
 
                 const shown = dayEvents.slice(0, MAX_EVENTS_SHOWN);
                 const extra = dayEvents.length - shown.length;
 
                 const eventsHtml = shown.map(r => {
-                    const statusClass = r.status === 'Confirmada' ? 'event-confirmada'
-                                       : r.status === 'Pendente'   ? 'event-pendente'
-                                       : 'event-outro';
+                    const statusClass = eventColorClass(r.platform, r.status);
                     const room = (r.room || '').replace('QUARTO ', '');
                     const label = room ? `${r.guest} · ${room}` : r.guest;
-                    const title = `${r.guest} — ${room || 'Quarto não informado'} (${r.status})`;
+                    const title = `${r.guest} — ${room || 'Quarto não informado'} (${r.platform} · ${r.status})`;
                     return `<div class="day-event ${statusClass}" title="${title}">${label}</div>`;
                 }).join('');
                 const moreHtml = extra > 0 ? `<div class="day-event-more">+${extra} mais</div>` : '';
