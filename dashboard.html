@@ -451,6 +451,22 @@
             color: #555;
         }
 
+        .day-event.event-direto-confirmada {
+            background: #f5c518;
+            color: #4d3c00;
+        }
+
+        .day-event.event-direto-outro {
+            background: #fff3b0;
+            color: #7a5c00;
+        }
+
+        /* Concluída = verde, sobrepõe a cor da plataforma */
+        .day-event.event-concluido {
+            background: #28a745;
+            color: #fff;
+        }
+
         .day-event-more {
             font-size: 9px;
             color: #999;
@@ -541,6 +557,11 @@
             color: #5e35b1;
         }
 
+        .platform-direto {
+            background: #fff3b0;
+            color: #7a5c00;
+        }
+
         .status-badge {
             display: inline-block;
             padding: 4px 10px;
@@ -563,6 +584,11 @@
         .status-outro {
             background: #eee;
             color: #555;
+        }
+
+        .status-concluido {
+            background: #d4edda;
+            color: #155724;
         }
 
         .amount {
@@ -884,11 +910,21 @@
         function dateOnly(d) {
             return new Date(d.getFullYear(), d.getMonth(), d.getDate());
         }
-        // Booking = azul, Airbnb = lilás. Confirmada = tom cheio; qualquer outro status = tom claro.
+        // remove acento/caixa pra comparar status sem depender da grafia exata da planilha
+        function normalizeText(s) {
+            return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+        }
+        function isConcluido(status) {
+            return normalizeText(status).startsWith('CONCLU');
+        }
+        // Booking = azul, Airbnb = lilás, Direto = amarelo. Confirmada = tom cheio; qualquer outro status = tom claro.
+        // Concluída sempre verde, sobrepõe a cor da plataforma.
         function eventColorClass(platform, status) {
+            if (isConcluido(status)) return 'event-concluido';
             const confirmed = status === 'Confirmada';
             if (platform === 'BOOKING') return confirmed ? 'event-booking-confirmada' : 'event-booking-outro';
             if (platform === 'AIRBNB')  return confirmed ? 'event-airbnb-confirmada'  : 'event-airbnb-outro';
+            if (platform === 'DIRETO')  return confirmed ? 'event-direto-confirmada'  : 'event-direto-outro';
             return confirmed ? 'event-plataforma-confirmada' : 'event-plataforma-outro';
         }
         function toDateInputValue(dateStr) {
@@ -999,9 +1035,11 @@
         function platformBadgeClass(p) {
             if (p === 'AIRBNB') return 'platform-airbnb';
             if (p === 'BOOKING') return 'platform-booking';
+            if (p === 'DIRETO') return 'platform-direto';
             return 'platform-outro';
         }
         function statusBadgeClass(s) {
+            if (isConcluido(s)) return 'status-concluido';
             if (s === 'Confirmada') return 'status-confirmada';
             if (s === 'Pendente') return 'status-pendente';
             return 'status-outro';
@@ -1071,12 +1109,17 @@
             const platformTotals = {};
             filteredReservas.forEach(r => { platformTotals[r.platform] = (platformTotals[r.platform] || 0) + (r.value || 0); });
             const platformLabels = Object.keys(platformTotals);
-            const platformColors = { AIRBNB: '#d63031', BOOKING: '#1976d2' };
+            const platformColors = { AIRBNB: '#d63031', BOOKING: '#1976d2', DIRETO: '#f5c518' };
 
             const statusTotals = {};
             filteredReservas.forEach(r => { statusTotals[r.status] = (statusTotals[r.status] || 0) + 1; });
             const statusLabels = Object.keys(statusTotals);
-            const statusColors = { Confirmada: '#28a745', Pendente: '#ffc107' };
+            const statusColorFor = (label) => {
+                if (isConcluido(label)) return '#28a745';
+                if (label === 'Confirmada') return '#28a745';
+                if (label === 'Pendente') return '#ffc107';
+                return '#999';
+            };
 
             const roomTotals = {};
             filteredReservas.forEach(r => { const label = (r.room || 'Outro').replace('QUARTO ', ''); roomTotals[label] = (roomTotals[label] || 0) + 1; });
@@ -1101,7 +1144,7 @@
                 type: 'doughnut',
                 data: {
                     labels: statusLabels,
-                    datasets: [{ data: statusLabels.map(l => statusTotals[l]), backgroundColor: statusLabels.map(l => statusColors[l] || '#999'), borderColor: '#fff', borderWidth: 2 }]
+                    datasets: [{ data: statusLabels.map(l => statusTotals[l]), backgroundColor: statusLabels.map(l => statusColorFor(l)), borderColor: '#fff', borderWidth: 2 }]
                 },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 15, font: { size: 12 } } } } }
             });
