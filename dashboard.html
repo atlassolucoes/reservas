@@ -183,10 +183,33 @@
             color: #333;
         }
 
+        .header-top-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .header-top-right {
             display: flex;
             align-items: center;
             gap: 12px;
+        }
+
+        .sidebar-toggle {
+            display: none;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
         }
 
         .updated-at {
@@ -659,18 +682,100 @@
         }
 
         @media (max-width: 768px) {
+            .sidebar-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
             .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
+                width: 85%;
+                max-width: 300px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.open {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 90;
             }
 
             .main-content {
                 margin-left: 0;
             }
 
+            .header {
+                padding: 16px;
+            }
+
+            .header-title {
+                font-size: 18px;
+            }
+
+            .search-box {
+                width: 100%;
+                margin-top: 12px;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .kpi-value {
+                font-size: 20px;
+            }
+
+            .content-section {
+                padding: 14px;
+            }
+
             .cards-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .chart-card {
+                min-height: 300px;
+            }
+
+            .chart-container {
+                min-height: 220px;
+            }
+
+            .calendar-grid {
+                gap: 3px;
+            }
+
+            .day-header {
+                padding: 6px 2px;
+                font-size: 10px;
+            }
+
+            .day {
+                min-height: 60px;
+                padding: 3px;
+                font-size: 8px;
+            }
+
+            .day-num {
+                font-size: 10px;
+                margin-bottom: 2px;
+            }
+
+            .day-event {
+                font-size: 8px;
+                padding: 1px 3px;
+            }
+
+            table {
+                min-width: 720px;
             }
         }
     </style>
@@ -743,18 +848,23 @@
 
             <div class="sidebar-section">
                 <div class="filter-buttons">
-                    <button class="btn-filter btn-apply" onclick="applyFilters()">Filtrar</button>
+                    <button class="btn-filter btn-apply" onclick="applyFilters(); closeSidebar();">Filtrar</button>
                     <button class="btn-filter btn-reset" onclick="resetFilters()">Limpar</button>
                 </div>
             </div>
         </aside>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
         <!-- CONTEÚDO PRINCIPAL -->
         <main class="main-content">
             <!-- HEADER -->
             <div class="header">
                 <div class="header-top">
-                    <h1 class="header-title">Gerenciamento de Reservas</h1>
+                    <div class="header-top-left">
+                        <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Abrir filtros">☰</button>
+                        <h1 class="header-title">Gerenciamento de Reservas</h1>
+                    </div>
                     <div class="header-top-right">
                         <span class="updated-at" id="updatedAt"></span>
                         <button class="btn-refresh" onclick="triggerUpdate()">↻ Atualizar</button>
@@ -916,6 +1026,14 @@
             return new Date(d.getFullYear(), d.getMonth(), d.getDate());
         }
         // remove acento/caixa pra comparar status sem depender da grafia exata da planilha
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
+        }
+        function closeSidebar() {
+            document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('open');
+        }
         function normalizeText(s) {
             return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
         }
