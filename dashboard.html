@@ -183,10 +183,33 @@
             color: #333;
         }
 
+        .header-top-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .header-top-right {
             display: flex;
             align-items: center;
             gap: 12px;
+        }
+
+        .sidebar-toggle {
+            display: none;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            color: #667eea;
+            flex-shrink: 0;
+        }
+
+        .sidebar-overlay {
+            display: none;
         }
 
         .updated-at {
@@ -659,18 +682,100 @@
         }
 
         @media (max-width: 768px) {
+            .sidebar-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
             .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
+                width: 85%;
+                max-width: 300px;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.open {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 90;
             }
 
             .main-content {
                 margin-left: 0;
             }
 
+            .header {
+                padding: 16px;
+            }
+
+            .header-title {
+                font-size: 18px;
+            }
+
+            .search-box {
+                width: 100%;
+                margin-top: 12px;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .kpi-value {
+                font-size: 20px;
+            }
+
+            .content-section {
+                padding: 14px;
+            }
+
             .cards-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .chart-card {
+                min-height: 300px;
+            }
+
+            .chart-container {
+                min-height: 220px;
+            }
+
+            .calendar-grid {
+                gap: 3px;
+            }
+
+            .day-header {
+                padding: 6px 2px;
+                font-size: 10px;
+            }
+
+            .day {
+                min-height: 60px;
+                padding: 3px;
+                font-size: 8px;
+            }
+
+            .day-num {
+                font-size: 10px;
+                margin-bottom: 2px;
+            }
+
+            .day-event {
+                font-size: 8px;
+                padding: 1px 3px;
+            }
+
+            table {
+                min-width: 720px;
             }
         }
     </style>
@@ -743,18 +848,23 @@
 
             <div class="sidebar-section">
                 <div class="filter-buttons">
-                    <button class="btn-filter btn-apply" onclick="applyFilters()">Filtrar</button>
+                    <button class="btn-filter btn-apply" onclick="applyFilters(); closeSidebar();">Filtrar</button>
                     <button class="btn-filter btn-reset" onclick="resetFilters()">Limpar</button>
                 </div>
             </div>
         </aside>
+
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
         <!-- CONTEÚDO PRINCIPAL -->
         <main class="main-content">
             <!-- HEADER -->
             <div class="header">
                 <div class="header-top">
-                    <h1 class="header-title">Gerenciamento de Reservas</h1>
+                    <div class="header-top-left">
+                        <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Abrir filtros">☰</button>
+                        <h1 class="header-title">Gerenciamento de Reservas</h1>
+                    </div>
                     <div class="header-top-right">
                         <span class="updated-at" id="updatedAt"></span>
                         <button class="btn-refresh" onclick="triggerUpdate()">↻ Atualizar</button>
@@ -865,7 +975,7 @@
 
     <script>
         /* ── DATA — replaced by fetch_data.py ── */
-        const DATA = {"updated_at":"2026-07-23T00:38:17Z","reservas":[{"id":1,"platform":"BOOKING","dataReserva":"2026-07-16","guest":"França Leonardo","phone":"Sem contato","status":"Concluido","people":2,"days":1,"room":"GRENDENE","checkin":"2026-07-17T13:00:00","checkout":"2026-07-18T12:00:00","value":87.98,"commission":13.2,"netValue":74.78,"received":"2026-08-01","obs":""},{"id":2,"platform":"AIRBNB","dataReserva":"2026-07-17","guest":"Henrique","phone":"Sem contato","status":"Concluido","people":1,"days":1,"room":"SERRA","checkin":"2026-07-18T13:00:00","checkout":"2026-07-19T12:00:00","value":134.0,"commission":24.4,"netValue":109.6,"received":"2026-08-01","obs":""},{"id":3,"platform":"BOOKING","dataReserva":"2026-07-17","guest":"Joao Marcelo Macedo","phone":"Sem contato","status":"Concluido","people":1,"days":4,"room":"SERRA","checkin":"2026-07-19T13:00:00","checkout":"2026-07-23T11:00:00","value":306.0,"commission":45.9,"netValue":260.1,"received":null,"obs":""},{"id":4,"platform":"AIRBNB","dataReserva":"2026-07-11","guest":"Eva Margarini","phone":"‪+55 88 99821-0474‬","status":"Confirmada","people":1,"days":2,"room":"GRENDENE","checkin":"2026-07-23T13:00:00","checkout":"2026-07-25T12:00:00","value":206.8,"commission":37.66,"netValue":169.14,"received":"2026-08-01","obs":""},{"id":5,"platform":"AIRBNB","dataReserva":"2026-07-13","guest":"Eva Margarini","phone":"‪+55 88 99821-0474‬","status":"Confirmada","people":1,"days":2,"room":"GRENDENE","checkin":"2026-07-25T13:00:00","checkout":"2026-07-27T12:00:00","value":198.33,"commission":23.46,"netValue":242.5,"received":"2026-08-01","obs":""},{"id":6,"platform":"BOOKING","dataReserva":"2026-07-15","guest":"Anderson Candido","phone":"Sem contato","status":"Confirmada","people":2,"days":1,"room":"SERRA","checkin":"2026-07-25T13:00:00","checkout":"2026-07-26T12:00:00","value":76.5,"commission":11.47,"netValue":65.03,"received":"2026-08-01","obs":""},{"id":7,"platform":"DIRETO","dataReserva":"2026-07-11","guest":"Thais Vitoria","phone":"‪+55 98 99190-1528‬","status":"Confirmada","people":2,"days":1,"room":"SERRA","checkin":"2026-08-08T13:00:00","checkout":"2026-08-10T12:00:00","value":250.0,"commission":0.0,"netValue":250.0,"received":"2026-08-01","obs":""},{"id":8,"platform":"BOOKING","dataReserva":"2026-07-12","guest":"Bruno Bezerra Batista","phone":"Sem contato","status":"Confirmada","people":2,"days":2,"room":"GRENDENE","checkin":"2026-08-08T13:00:00","checkout":"2026-08-10T12:00:00","value":156.4,"commission":23.46,"netValue":132.94,"received":"2026-08-01","obs":"Um hóspede solicitou estacionamento gratuito (se disponível)."},{"id":9,"platform":"BOOKING","dataReserva":"2026-07-13","guest":"Sérgio Alcântara Alves Poty","phone":"Sem contato","status":"Confirmada","people":1,"days":1,"room":"GRENDENE","checkin":"2026-08-15T13:00:00","checkout":"2026-08-16T12:00:00","value":78.2,"commission":11.73,"netValue":66.47,"received":"2026-08-01","obs":""},{"id":10,"platform":"BOOKING","dataReserva":"2026-07-17","guest":"Cauã Ferreira Câmara","phone":"Sem contato","status":"Confirmada","people":1,"days":3,"room":"SERRA","checkin":"2026-10-30T13:00:00","checkout":"2026-11-02T12:00:00","value":229.5,"commission":34.42,"netValue":195.08,"received":null,"obs":""}]};
+        const DATA = {"updated_at":"2026-07-23T02:06:10Z","reservas":[{"id":1,"platform":"BOOKING","dataReserva":"2026-07-16","guest":"França Leonardo","phone":"Sem contato","status":"Concluido","people":2,"days":1,"room":"GRENDENE","checkin":"2026-07-17T13:00:00","checkout":"2026-07-18T12:00:00","value":87.98,"commission":13.2,"netValue":74.78,"received":"2026-08-01","obs":""},{"id":2,"platform":"AIRBNB","dataReserva":"2026-07-17","guest":"Henrique","phone":"Sem contato","status":"Concluido","people":1,"days":1,"room":"SERRA","checkin":"2026-07-18T13:00:00","checkout":"2026-07-19T12:00:00","value":134.0,"commission":24.4,"netValue":109.6,"received":"2026-08-01","obs":""},{"id":3,"platform":"BOOKING","dataReserva":"2026-07-17","guest":"Joao Marcelo Macedo","phone":"Sem contato","status":"Concluido","people":1,"days":4,"room":"SERRA","checkin":"2026-07-19T13:00:00","checkout":"2026-07-23T11:00:00","value":306.0,"commission":45.9,"netValue":260.1,"received":null,"obs":""},{"id":4,"platform":"AIRBNB","dataReserva":"2026-07-11","guest":"Eva Margarini","phone":"‪+55 88 99821-0474‬","status":"Confirmada","people":1,"days":2,"room":"GRENDENE","checkin":"2026-07-23T13:00:00","checkout":"2026-07-25T12:00:00","value":206.8,"commission":37.66,"netValue":169.14,"received":"2026-08-01","obs":""},{"id":5,"platform":"AIRBNB","dataReserva":"2026-07-13","guest":"Eva Margarini","phone":"‪+55 88 99821-0474‬","status":"Confirmada","people":1,"days":2,"room":"GRENDENE","checkin":"2026-07-25T13:00:00","checkout":"2026-07-27T12:00:00","value":198.33,"commission":23.46,"netValue":242.5,"received":"2026-08-01","obs":""},{"id":6,"platform":"BOOKING","dataReserva":"2026-07-15","guest":"Anderson Candido","phone":"Sem contato","status":"Confirmada","people":2,"days":1,"room":"SERRA","checkin":"2026-07-25T13:00:00","checkout":"2026-07-26T12:00:00","value":76.5,"commission":11.47,"netValue":65.03,"received":"2026-08-01","obs":""},{"id":7,"platform":"DIRETO","dataReserva":"2026-07-11","guest":"Thais Vitoria","phone":"‪+55 98 99190-1528‬","status":"Confirmada","people":2,"days":1,"room":"SERRA","checkin":"2026-08-08T13:00:00","checkout":"2026-08-10T12:00:00","value":250.0,"commission":0.0,"netValue":250.0,"received":"2026-08-01","obs":""},{"id":8,"platform":"BOOKING","dataReserva":"2026-07-12","guest":"Bruno Bezerra Batista","phone":"Sem contato","status":"Confirmada","people":2,"days":2,"room":"GRENDENE","checkin":"2026-08-07T13:00:00","checkout":"2026-08-10T12:00:00","value":241.4,"commission":36.21,"netValue":205.19,"received":"2026-08-01","obs":"Um hóspede solicitou estacionamento gratuito (se disponível)."},{"id":9,"platform":"BOOKING","dataReserva":"2026-07-13","guest":"Sérgio Alcântara Alves Poty","phone":"Sem contato","status":"Confirmada","people":1,"days":1,"room":"GRENDENE","checkin":"2026-08-15T13:00:00","checkout":"2026-08-16T12:00:00","value":78.2,"commission":11.73,"netValue":66.47,"received":"2026-08-01","obs":""},{"id":10,"platform":"BOOKING","dataReserva":"2026-07-17","guest":"Cauã Ferreira Câmara","phone":"Sem contato","status":"Confirmada","people":1,"days":3,"room":"SERRA","checkin":"2026-10-30T13:00:00","checkout":"2026-11-02T12:00:00","value":229.5,"commission":34.42,"netValue":195.08,"received":null,"obs":""}]};
         const reservas = DATA.reservas;
 
         let filteredReservas = [...reservas];
@@ -916,6 +1026,14 @@
             return new Date(d.getFullYear(), d.getMonth(), d.getDate());
         }
         // remove acento/caixa pra comparar status sem depender da grafia exata da planilha
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
+        }
+        function closeSidebar() {
+            document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('open');
+        }
         function normalizeText(s) {
             return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
         }
