@@ -596,6 +596,11 @@
             color: #28a745;
         }
 
+        .commission-pct {
+            font-size: 11px;
+            color: #999;
+        }
+
         .pagination {
             padding: 16px 20px;
             border-top: 1px solid #e0e0e0;
@@ -771,7 +776,7 @@
                     <div class="kpi-card info">
                         <div class="kpi-label">Comissões</div>
                         <div class="kpi-value" id="kpiComissao">R$ 0,00</div>
-                        <div class="kpi-meta">Plataformas</div>
+                        <div class="kpi-meta" id="kpiComissaoMeta">-</div>
                     </div>
                     <div class="kpi-card warning">
                         <div class="kpi-label">Valor Líquido</div>
@@ -1027,8 +1032,11 @@
 
             document.getElementById('kpiTotal').textContent = total;
             document.getElementById('kpiTotalMeta').textContent = `${confirmadas} confirmada${confirmadas !== 1 ? 's' : ''}, ${pendentes} pendente${pendentes !== 1 ? 's' : ''}`;
+            const comissaoPct = totalReceita ? (totalComissao / totalReceita * 100) : 0;
+
             document.getElementById('kpiReceita').textContent = `R$ ${totalReceita.toFixed(2).replace('.', ',')}`;
             document.getElementById('kpiComissao').textContent = `R$ ${totalComissao.toFixed(2).replace('.', ',')}`;
+            document.getElementById('kpiComissaoMeta').textContent = `${comissaoPct.toFixed(1).replace('.', ',')}% da receita`;
             document.getElementById('kpiLiquido').textContent = `R$ ${totalLiquido.toFixed(2).replace('.', ',')}`;
         }
 
@@ -1080,7 +1088,7 @@
                     <td>${(r.room || '').replace('QUARTO ', '')}</td>
                     <td><span class="status-badge ${statusClass}">${r.status}</span></td>
                     <td><span class="amount">${r.value != null ? `R$ ${r.value.toFixed(2).replace('.', ',')}` : '-'}</span></td>
-                    <td>${r.commission != null ? `R$ ${r.commission.toFixed(2).replace('.', ',')}` : '-'}</td>
+                    <td>${r.commission != null ? `R$ ${r.commission.toFixed(2).replace('.', ',')}${r.value ? ` <span class="commission-pct">(${(r.commission / r.value * 100).toFixed(1).replace('.', ',')}%)</span>` : ''}` : '-'}</td>
                     <td><span class="amount">${r.netValue != null ? `R$ ${r.netValue.toFixed(2).replace('.', ',')}` : '-'}</span></td>
                     <td>${fmtDateBR(r.received)}</td>
                 `;
