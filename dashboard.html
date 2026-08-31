@@ -1144,9 +1144,12 @@
             const total = filteredReservas.length;
             const confirmadas = filteredReservas.filter(r => r.status === 'Confirmada').length;
             const pendentes = filteredReservas.filter(r => r.status === 'Pendente').length;
-            const totalReceita = filteredReservas.filter(r => r.status === 'Confirmada').reduce((sum, r) => sum + (r.value || 0), 0);
-            const totalComissao = filteredReservas.filter(r => r.status === 'Confirmada').reduce((sum, r) => sum + (r.commission || 0), 0);
-            const totalLiquido = filteredReservas.filter(r => r.status === 'Confirmada').reduce((sum, r) => sum + (r.netValue || 0), 0);
+            // Os valores financeiros acompanham todas as reservas filtradas.
+            // Isso é especialmente importante no filtro por recebimento, pois
+            // reservas já recebidas normalmente estão com status "Concluido".
+            const totalReceita = filteredReservas.reduce((sum, r) => sum + (r.value || 0), 0);
+            const totalComissao = filteredReservas.reduce((sum, r) => sum + (r.commission || 0), 0);
+            const totalLiquido = filteredReservas.reduce((sum, r) => sum + (r.netValue || 0), 0);
 
             document.getElementById('kpiTotal').textContent = total;
             document.getElementById('kpiTotalMeta').textContent = `${confirmadas} confirmada${confirmadas !== 1 ? 's' : ''}, ${pendentes} pendente${pendentes !== 1 ? 's' : ''}`;
